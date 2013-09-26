@@ -6,10 +6,12 @@ from fabric.colors import red as _red
 from fabric.contrib.files import *
 from fabtools import require
 import fabtools
+import datetime
 import os.path
 import sys
 
 env.project_name = 'blog.adamw523.com'
+env.local_backups_dir = 'backups'
 
 #---------------------------
 # Environemnts
@@ -21,12 +23,12 @@ def dodo():
 	"""
 
 	# get config file
-	config = ConfigParser.ConfigParser()
-	config.read(['private/dodo.cfg'])
+	env.config = ConfigParser.ConfigParser()
+	env.config.read(['private/dodo.cfg'])
 
 	# set values from config
-	env.hosts = [config.get('dodo', 'host')]
-	env.user = config.get('dodo', 'user')
+	env.hosts = [env.config.get('dodo', 'host')]
+	env.user = env.config.get('dodo', 'user')
 
 def vagrant():
     """
@@ -44,13 +46,27 @@ def vagrant():
     _set_vagrant_env()
 
 #---------------------------
-# Cloud9 IDE
+# Database Related
 #---------------------------
 
 def backup_db():
-    if not exists('~/work'):
-        run('mkdir ~/work')
+    user = env.config.get('mysql', 'user')
+    password = env.config.get('mysql', 'password')
+    database = env.config.get('mysql', 'database')
 
+    now = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d_%H-%M-%S')
+    remote_dir = '~'
+    filename = '%s_%s_dump.sql' % (database, now)
+    remote_path = remote_dir + '/' + filename
+    command = 'mysqldump --user="%s" --password="%s" %s > %s'
+
+    run(command % (user, password, database, remote_path), quiet=True)
+    get(remote_dir + '/' + filename, env.local_backups_dir + '/' + filename)
+    run('rm %s' % (remote_path))
+
+#---------------------------
+# Vagrant
+#---------------------------
 
 def _vagrant_remount():
     """Remount the vagrant partition"""
