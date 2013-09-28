@@ -61,8 +61,9 @@ def backup_db():
     command = 'mysqldump --user="%s" --password="%s" %s > %s'
 
     run(command % (user, password, database, remote_path), quiet=True)
-    get(remote_dir + '/' + filename, env.local_backups_dir + '/' + filename)
-    run('rm %s' % (remote_path))
+    run('gzip %s' % (remote_path))
+    get(remote_path + '.gz', env.local_backups_dir + '/' + filename + '.gz')
+    run('rm %s' % (remote_path + '.gz'))
 
 #---------------------------
 # Vagrant
