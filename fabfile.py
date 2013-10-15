@@ -1,14 +1,16 @@
 import ConfigParser
+import fabtools
+import datetime
+import os.path
+import sys
+
+from bs4 import BeautifulSoup
 from fabric.utils import abort
 from fabric.colors import green as _green
 from fabric.colors import yellow as _yellow
 from fabric.colors import red as _red
 from fabric.contrib.files import *
 from fabtools import require
-import fabtools
-import datetime
-import os.path
-import sys
 
 env.project_name = 'blog.adamw523.com'
 env.local_backups_dir = 'backups'
@@ -64,6 +66,55 @@ def backup_db():
     run('gzip %s' % (remote_path))
     get(remote_path + '.gz', env.local_backups_dir + '/' + filename + '.gz')
     run('rm %s' % (remote_path + '.gz'))
+
+def restore_posterous_pics():
+    """Gets Posterous backup from S3"""
+    backup_zip_url = "http://s3.amazonaws.com/adamw523_backups/blog.adamw523.com/space-1613972-adamw523-66bc5c3f7d11552b9215dd76c3254c05.zip"
+    filename = backup_zip_url.split('/')[-1]
+    dirname = filename.split('.')[0]
+
+    with cd('/tmp'):
+        #run('wget %s' % backup_zip_url)
+        run('unzip -q %s' % filename)
+
+        run('mv %s/image /sites/blog/wp-content/posterous_images' % dirname)
+
+        run('rm -fR %s' % dirname)
+        #run('rm %s' % filename)
+
+def wordpress_get_all_posts_content():
+    """Write all posts contents to backups/posts_content"""
+    user = env.config.get('mysql', 'user')
+    password = env.config.get('mysql', 'password')
+    database = env.config.get('mysql', 'database')
+
+    command = "mysql -NB --user=%s --password=%s -e 'select post_content from wp_posts' %s"
+    contents = run(command % (user, password, database), quiet=True)
+    with open('backups/posts_content', 'w') as pcfile:
+        pcfile.write(contents)
+
+def get_posterous_images():
+    """Get all img and a URLs that link to Posterous from backups/posts_content"""
+    contents = ""
+    with open('backups/posts_content') as pcfile:
+        contents = pcfile.read()
+
+    doc = BeautifulSoup(contents)
+
+    img_tags = doc.select('img[src*=".posterous.com"]')
+    with open('backups/img_tags', 'w') as outf:
+        for tag in img_tags:
+            outf.write(tag['src'] + '\n')
+
+    a_tags = doc.select('a[href*=".posterous.com"]')
+    with open('backups/a_tags', 'w') as outf:
+        for tag in a_tags:
+            outf.write(tag['href'] + '\n')
+
+def replace_posterous_urls():
+    # replace all instances of Posterous image urls with local URLs
+    # update table_name set field = replace(field, 'foo', 'bar') where instr(field, 'foo') > 0;
+    pass
 
 #---------------------------
 # Vagrant
