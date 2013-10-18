@@ -2,6 +2,7 @@ import ConfigParser
 import fabtools
 import datetime
 import os.path
+import re
 import sys
 
 from bs4 import BeautifulSoup
@@ -109,12 +110,27 @@ def get_posterous_images():
     a_tags = doc.select('a[href*=".posterous.com"]')
     with open('backups/a_tags', 'w') as outf:
         for tag in a_tags:
-            outf.write(tag['href'] + '\n')
+            href = tag['href']
+            if re.search(r".*[png|jpg|jpeg]$", href):
+                outf.write(href + '\n')
 
 def replace_posterous_urls():
     # replace all instances of Posterous image urls with local URLs
     # update table_name set field = replace(field, 'foo', 'bar') where instr(field, 'foo') > 0;
-    pass
+
+    a_tags = []
+    img_tags = []
+    posterous_paths = []
+
+    for path, arr in [  ('posterous_image_files', posterous_paths),
+                        ('backups/a_tags', a_tags),
+                        ('backups/img_tags', img_tags)]:
+        with open(path) as f:
+            arr.extend(f.readlines())
+
+    for a_path in a_tags:
+        print a_path
+
 
 #---------------------------
 # Vagrant
