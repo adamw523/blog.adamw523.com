@@ -116,9 +116,8 @@ def get_posterous_images():
             if s:
                 outf.write(href + '\n')
 
-def replace_posterous_urls():
-    # replace all instances of Posterous image urls with local URLs
-    # update table_name set field = replace(field, 'foo', 'bar') where instr(field, 'foo') > 0;
+def create_posterous_url_replacements():
+    """Create CSV files of Posterous image urls to local URLs"""
 
     a_tags = [] # anchor tags linking to posterous images from posts
     img_tags = [] # image src attributes from posts
@@ -133,6 +132,24 @@ def replace_posterous_urls():
 
     _make_replacment_csv('backups/a_tags_replacments.csv', a_tags, posterous_paths)
     _make_replacment_csv('backups/img_tags_replacments.csv', img_tags, posterous_paths)
+
+def run_posterous_replacements():
+    """replace all instances of Posterous image urls with local URLs"""
+    # update table_name set field = replace(field, 'foo', 'bar') where instr(field, 'foo') > 0;
+    user = env.config.get('mysql', 'user')
+    password = env.config.get('mysql', 'password')
+    database = env.config.get('mysql', 'database')
+
+    csvs = ['backups/a_tags_replacments.csv', 'backups/img_tags_replacments.csv']
+    for path in csvs:
+        with open(path) as f:
+            reader = csv.reader(f)
+            for row in reader:
+                sql_command = "update wp_posts set post_content = replace(post_content, '%s', '%s') where instr(post_content, '%s') > 0;"
+                sql_command = sql_command % (row[0], row[1], row[0])
+                command = "mysql -NB --user=%s --password=%s -e \"%s\" %s"
+                command = command % (user, password, sql_command, database)
+                run(command, quiet=True)
 
 def _make_replacment_csv(out_path, originals, posterous_paths):
     prefix = "http://blog.adamw523.com/wp-content/posterous_images/"
@@ -151,7 +168,7 @@ def _make_replacment_csv(out_path, originals, posterous_paths):
             matching = filter(lambda x: _contains_all_parts(x, parts), posterous_paths)
 
             if len(matching) > 0:
-                outwriter.writerow([a_path, prefix + matching[0]])
+                outwriter.writerow([a_path.strip(), prefix + matching[0].strip()])
             else:
                 print "not found: %s" % a_path
 
