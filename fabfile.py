@@ -1,4 +1,5 @@
 import ConfigParser
+import csv
 import fabtools
 import datetime
 import os.path
@@ -111,25 +112,61 @@ def get_posterous_images():
     with open('backups/a_tags', 'w') as outf:
         for tag in a_tags:
             href = tag['href']
-            if re.search(r".*[png|jpg|jpeg]$", href):
+            s = re.search(r".*(png|jpg|jpeg)$", href)
+            if s:
                 outf.write(href + '\n')
 
 def replace_posterous_urls():
     # replace all instances of Posterous image urls with local URLs
     # update table_name set field = replace(field, 'foo', 'bar') where instr(field, 'foo') > 0;
 
-    a_tags = []
-    img_tags = []
-    posterous_paths = []
+    a_tags = [] # anchor tags linking to posterous images from posts
+    img_tags = [] # image src attributes from posts
+    posterous_paths = [] # image paths in posterous backup
 
+    # read source files into arrays
     for path, arr in [  ('posterous_image_files', posterous_paths),
                         ('backups/a_tags', a_tags),
                         ('backups/img_tags', img_tags)]:
         with open(path) as f:
             arr.extend(f.readlines())
 
-    for a_path in a_tags:
-        print a_path
+    _make_replacment_csv('backups/a_tags_replacments.csv', a_tags, posterous_paths)
+    _make_replacment_csv('backups/img_tags_replacments.csv', img_tags, posterous_paths)
+
+def _make_replacment_csv(out_path, originals, posterous_paths):
+    prefix = "http://blog.adamw523.com/wp-content/posterous_images/"
+
+    # regex for matching/extracting name of image
+    e = re.compile(r"(.*?)\.(png|jpg).*")
+
+    # get replacements for src vals
+    with open(out_path, 'w') as file_:
+        outwriter = csv.writer(file_)
+        for a_path in originals:
+            path_parts = a_path.split('/')
+            m = e.match(path_parts[-1])
+            name, extension = m.groups()
+            parts = re.split(r"[-_]", name) + [extension]
+            matching = filter(lambda x: _contains_all_parts(x, parts), posterous_paths)
+
+            if len(matching) > 0:
+                outwriter.writerow([a_path, prefix + matching[0]])
+            else:
+                print "not found: %s" % a_path
+
+def _contains_all_parts(s, parts, start=0):
+    # Does s contain all strings in parts, in order
+
+    index = s.find(parts[0], start);
+
+    if index == -1:
+        return False
+
+    if len(parts) > 1:
+        return _contains_all_parts(s, parts[1:], index+1)
+
+    return True
 
 
 #---------------------------
