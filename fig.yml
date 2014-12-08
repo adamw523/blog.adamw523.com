@@ -1,10 +1,7 @@
 mysql:
   build: mysql/
   environment:
-    MYSQL_ROOT_PASSWORD: fwoeifj32898fj
-    MYSQL_USER: wp
-    MYSQL_PASSWORD: wp
-    MYSQL_DATABASE: wp
+    MYSQL_ROOT_PASSWORD: wp
 
   ports:
     - 3306:3306
@@ -12,7 +9,18 @@ mysql:
 wordpress:
   build: wordpress/
   ports:
-    - 8072:80
+    - 80:80
   links:
     - mysql
+
+util:
+  build: util/
+  environment:
+    MYSQL_ROOT_PASSWORD: wp
+  links:
+    - wordpress
+    - mysql
+  volumes_from:
+    - wordpress
+
 
