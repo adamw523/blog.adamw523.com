@@ -208,3 +208,10 @@ def _get_vagrant_config():
 
     return conf
 
+def create_swapfile():
+    sudo('swapoff -a')
+    sudo('fallocate -l 1024M /swapfile')
+    sudo('chmod 600 /swapfile')
+    sudo('mkswap /swapfile')
+    sudo('swapon /swapfile')
+
