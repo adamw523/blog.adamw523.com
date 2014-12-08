@@ -69,6 +69,18 @@ def backup_db():
     get(remote_path + '.gz', env.local_backups_dir + '/' + filename + '.gz')
     run('rm %s' % (remote_path + '.gz'))
 
+def backup_wp_content():
+    now = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d_%H-%M-%S')
+    remote_dir = '~'
+    #filename = '%s_%s_dump.sql' % (database, now)
+    #remote_path = remote_dir + '/' + filename
+    #command = 'mysqldump --user="%s" --password="%s" %s > %s'
+
+    file_path = '/tmp/wp-content-%s.tgz' % now
+    run('tar -czf %s --directory=/sites/blog wp-content' % (file_path))
+    get(file_path, 'backups/')
+    run('rm %s' % (file_path))
+
 def restore_posterous_pics():
     """Gets Posterous backup from S3"""
     backup_zip_url = "http://s3.amazonaws.com/adamw523_backups/blog.adamw523.com/space-1613972-adamw523-66bc5c3f7d11552b9215dd76c3254c05.zip"
@@ -76,7 +88,7 @@ def restore_posterous_pics():
     dirname = filename.split('.')[0]
 
     with cd('/tmp'):
-        #run('wget %s' % backup_zip_url)
+        run('wget %s' % backup_zip_url)
         run('unzip -q %s' % filename)
 
         run('mv %s/image /sites/blog/wp-content/posterous_images' % dirname)
