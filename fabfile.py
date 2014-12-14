@@ -14,6 +14,7 @@ from fabric.colors import red as _red
 from fabric.contrib.files import *
 from fabtools import require
 
+from fab.backup import *
 from fab.deploy import *
 
 env.project_name = 'blog.adamw523.com'
@@ -49,6 +50,13 @@ def production():
 	env.hosts = [env.config.get('production', 'host')]
 	env.user = env.config.get('production', 'user')
 
+    # S3 config
+	env.s3_config = ConfigParser.ConfigParser()
+	env.s3_config.read(['private/boto.cfg'])
+	env.s3_access_key = env.s3_config.get('Credentials', 'aws_access_key_id')
+	env.s3_secret_key = env.s3_config.get('Credentials', 'aws_secret_access_key')
+	env.s3_backup_bucket = env.s3_config.get('Credentials', 'backup_bucket')
+
 #---------------------------
 # Local
 #---------------------------
@@ -56,35 +64,6 @@ def production():
 #---------------------------
 # Database Related
 #---------------------------
-
-def backup_db():
-    user = env.config.get('mysql', 'user')
-    password = env.config.get('mysql', 'password')
-    database = env.config.get('mysql', 'database')
-
-    now = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d_%H-%M-%S')
-    remote_dir = '~'
-    filename = '%s_%s_dump.sql' % (database, now)
-    remote_path = remote_dir + '/' + filename
-    command = 'mysqldump --user="%s" --password="%s" %s > %s'
-
-    run(command % (user, password, database, remote_path), quiet=True)
-    run('gzip %s' % (remote_path))
-    get(remote_path + '.gz', env.local_backups_dir + '/' + filename + '.gz')
-    run('rm %s' % (remote_path + '.gz'))
-
-def backup_wp_content():
-    now = datetime.datetime.strftime(datetime.datetime.now(), '%Y-%m-%d_%H-%M-%S')
-    remote_dir = '~'
-    #filename = '%s_%s_dump.sql' % (database, now)
-    #remote_path = remote_dir + '/' + filename
-    #command = 'mysqldump --user="%s" --password="%s" %s > %s'
-
-    file_path = '/tmp/wp-content-%s.tgz' % now
-    run('tar -czf %s --directory=/sites/blog wp-content' % (file_path))
-    get(file_path, 'backups/')
-    run('rm %s' % (file_path))
-
 
 
 #---------------------------
