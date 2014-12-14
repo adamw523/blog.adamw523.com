@@ -21,9 +21,9 @@ def restore_db_from_url():
         run('fig run util /restore_db_from_url.sh "%s"' % (path))
 
 def restore_wp_content_from_url():
-    path = os.getenv('DBURL', None)
+    path = os.getenv('WPURL', None)
     if not path:
-        abort(_red("Must provide DBURL in environment eg:") + "\n$ DBURL='http://s3server/path/file.gz' fab production restore_db_from_url")
+        abort(_red("Must provide WPURL in environment eg:") + "\n$ WPURL='http://s3server/path/file.gz' fab production restore_db_from_url")
     with cd('builds/adamw523blog'):
         run('fig run util /restore_wp_content_from_url.sh "%s"' % (path))
 

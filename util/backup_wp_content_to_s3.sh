@@ -1,3 +1,5 @@
+#!/bin/bash
+
 filename=wp-content-`date +'%Y-%m-%d_%H-%M-%S%z'`.tgz
 
 cd /var/www/html
