@@ -1,0 +1,28 @@
+version: "2"
+
+services:
+  mysql:
+    build: mysql/
+    environment:
+      MYSQL_ROOT_PASSWORD: changeinprod
+
+    ports:
+      - 3306:3306
+
+  wordpress:
+    build: wordpress/
+    environment:
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_PASSWORD: changeinprod
+      WORDPRESS_DB_HOST: mysql
+
+    ports:
+      - 41180:80
+
+  util:
+    build: util/
+    environment:
+      MYSQL_ROOT_PASSWORD: changeinprod
+    volumes_from:
+      - wordpress
+
