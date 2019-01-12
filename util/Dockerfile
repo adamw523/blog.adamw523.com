@@ -1,4 +1,4 @@
-FROM ubuntu
+FROM python
 
 RUN apt-get update && apt-get install -y less \
         curl vim less python-setuptools mysql-client
