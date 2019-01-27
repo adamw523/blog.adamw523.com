@@ -28,3 +28,14 @@ WPURL='http://s3server/path/file.tgz' fab production restore_wp_content_from_url
 
 ```
 
+# K8s
+```
+# build wordpress
+cd wordpress && docker build -t blog-adamw523-wordpress .
+
+# tag for local development
+docker tag blog-adamw523-wordpress docker.for.mac.localhost:5000/blog-adamw523-wordpres
+
+# push to local development
+docker push docker.for.mac.localhost:5000/blog-adamw523-wordpress
+```
