@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: wordpress
+  name: wordpress-util
   labels:
     app: wordpress
 spec:
   selector:
     matchLabels:
       app: wordpress
-      tier: frontend
+      tier: util
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
         app: wordpress
-        tier: frontend
+        tier: util
     spec:
       containers:
-      - image: host.docker.internal:5000/blog-adamw523-wordpress
-        name: wordpress
+      - image: host.docker.internal:5000/blog-adamw523-util
+        name: util
         env:
         - name: WORDPRESS_DB_HOST
           value: wordpress-mysql
@@ -28,9 +28,6 @@ spec:
             secretKeyRef:
               name: mysql-pass
               key: password
-        ports:
-        - containerPort: 80
-          name: wordpress
         volumeMounts:
         - name: wordpress-persistent-storage
           mountPath: /var/www/html
